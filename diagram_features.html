@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kerala Bank Middleware - Complete Architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        fontSize: '14px',
+        fontFamily: 'system-ui',
+        primaryColor: '#6366f1',
+        primaryTextColor: '#fff',
+        lineColor: '#34d399',
+        secondaryColor: '#f87171',
+        tertiaryColor: '#a78bfa',
+        clusterBkg: '#1e293b',
+        clusterBorder: '#475569'
+      },
+      flowchart: { useMaxWidth: true, htmlLabels: true }
+    });
+  </script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body { 
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+      color: #e2e8f0; 
+      font-family: system-ui, -apple-system, sans-serif; 
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 30px;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.6));
+      border-radius: 20px;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      backdrop-filter: blur(10px);
+    }
+    
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #60a5fa, #818cf8, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .header p {
+      font-size: 1.1rem;
+      color: #cbd5e1;
+      margin-bottom: 15px;
+    }
+    
+    .mermaid { 
+      background: #1e293b; 
+      border-radius: 16px; 
+      padding: 25px; 
+      margin-bottom: 25px;
+      border: 1px solid #475569;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin: 25px 0;
+    }
+    
+    .feature-card {
+      background: rgba(30, 41, 59, 0.8);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #475569;
+      transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-color: #6366f1;
+      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+    }
+    
+    .feature-card h3 {
+      color: #60a5fa;
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .feature-list {
+      list-style: none;
+    }
+    
+    .feature-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid #374151;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .feature-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin: 25px 0;
+    }
+    
+    .metric-card {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    
+    .metric-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #60a5fa;
+      margin-bottom: 5px;
+    }
+    
+    .metric-label {
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+    
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 25px 0;
+      font-size: 0.9rem;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .summary-table th {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    
+    .summary-table td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #475569;
+      color: #cbd5e1;
+    }
+    
+    .summary-table tr:hover td { 
+      background: rgba(99, 102, 241, 0.1); 
+    }
+    
+    .tech-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px 0;
+      justify-content: center;
+    }
+    
+    .tech-badge {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+    }
+    
+    .footer { 
+      text-align: center; 
+      margin-top: 40px; 
+      padding: 30px;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.6), rgba(51, 65, 85, 0.4));
+      border-radius: 15px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    
+    .company-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #60a5fa, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+    
+    .highlight {
+      color: #34d399;
+      font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+      .header h1 { font-size: 1.8rem; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Kerala State Co-operative Bank Ltd.</h1>
+      <p>Enterprise Middleware Architecture - Complete Workflow Diagram</p>
+      <p style="color: #34d399; font-weight: 600;">Lightning-Fast • Zero-Trust Security • Auto-Scaling • 99.95% Uptime</p>
+    </div>
+
+    <!-- Main Mermaid Flowchart -->
+    <div class="mermaid">
+%%{init: {'theme':'base', 'themeVariables': { 'fontSize': '13px','fontFamily': 'system-ui', 'primaryColor': '#6366f1', 'primaryTextColor': '#fff', 'lineColor': '#34d399'}}}%%
+flowchart TD
+    subgraph L1["🌐 LAYER 1: External Systems & Channels"]
+        A1["📱 Mobile Banking<br/>iOS/Android + Biometrics"]
+        A2["💻 Internet Banking<br/>Web Portal + 2FA"]
+        A3["🏧 ATM/POS Network<br/>500+ ATMs"]
+        A4["💸 Payment Systems<br/>UPI • IMPS • NEFT"]
+        A5["🏛️ Government Portals<br/>Aadhaar • DigiLocker"]
+        A6["🔗 FinTech APIs<br/>15+ Partners"]
+        A7["🤖 Digital Kiosks<br/>Self-Service"]
+    end
+
+    subgraph L2["🛡️ LAYER 2: Security Gateway & API Management"]
+        GW["🔐 API Gateway<br/>WSO2/Kong<br/>2000 req/sec"]
+        AUTH["🔑 Auth Service<br/>OAuth 2.0 • JWT<br/>MFA • SSO"]
+        ENC["🛡️ Encryption<br/>TLS 1.3<br/>AES-256"]
+        RBAC["👥 RBAC Engine<br/>50+ Roles<br/>200+ Permissions"]
+        WAF["🔥 WAF + DDoS<br/>OWASP Top 10<br/>1 Tbps Defense"]
+        COMPLIANCE["📋 Compliance<br/>RBI • ISO 27001<br/>PCI-DSS"]
+    end
+
+    subgraph L3["🔄 LAYER 3: Integration Hub & Processing"]
+        ESB["🔄 ESB<br/>WSO2 EI<br/>2000+ TPS"]
+        MS["⚙️ Microservices<br/>35+ Services<br/>K8s + Docker"]
+        KAFKA["📨 Apache Kafka<br/>100K msg/sec<br/>5-Node Cluster"]
+        RABBIT["🐰 RabbitMQ<br/>AMQP<br/>200+ Queues"]
+        ADAPTER["🔌 Protocol Adapter<br/>REST • SOAP<br/>ISO 8583"]
+        SAGA["🔀 Saga Engine<br/>Distributed TX<br/>Compensation"]
+    end
+
+    subgraph L4["🏦 LAYER 4: Core Systems & Data Storage"]
+        FINACLE["🏦 Finacle CBS<br/>5M+ Accounts<br/>Oracle 19c RAC"]
+        NPCI["🇮🇳 NPCI Gateway<br/>UPI • RTGS<br/>Real-time"]
+        PG["💾 PostgreSQL<br/>ACID • HA<br/>Replication"]
+        REDIS["⚡ Redis Cache<br/>256GB<br/>95%+ Hit Ratio"]
+        ES["📊 Elasticsearch<br/>50TB Logs<br/>7-Year Retention"]
+        DR["🔄 DR/BCP<br/>RPO <15min<br/>RTO <30min"]
+    end
+
+    subgraph L5["👁️ LAYER 5: Monitoring & Observability"]
+        PROM["📈 Prometheus<br/>10K+ Metrics<br/>15s Scrape"]
+        GRAF["📊 Grafana<br/>30+ Dashboards<br/>200+ Alerts"]
+        KIB["🔍 Kibana<br/>500GB/day<br/>Audit Trails"]
+        JAEGER["🔗 Jaeger<br/>1M+ Traces/day<br/>Distributed"]
+        APM["⚡ APM Tool<br/>Dynatrace<br/><100ms Response"]
+        PD["🚨 PagerDuty<br/>24x7<br/><5min Response"]
+    end
+
+    A1 -->|HTTPS/TLS 1.3| GW
+    A2 -->|TLS + 2FA| GW
+    A3 -->|ISO 8583| GW
+    A4 -->|REST/gRPC| GW
+    A5 -->|OAuth 2.0| GW
+    A6 -->|SDK + OAuth| GW
+    A7 -->|MFA + HTTPS| GW
+
+    GW --> AUTH
+    AUTH --> ENC
+    ENC --> RBAC
+    RBAC --> WAF
+    WAF --> COMPLIANCE
+
+    COMPLIANCE --> ESB
+    ESB --> MS
+    ESB --> KAFKA
+    ESB --> RABBIT
+    ESB --> ADAPTER
+    ESB --> SAGA
+
+    MS --> FINACLE
+    KAFKA --> FINACLE
+    FINACLE --> NPCI
+    FINACLE --> PG
+    FINACLE --> REDIS
+    FINACLE --> ES
+    FINACLE --> DR
+
+    PG --> PROM
+    REDIS --> PROM
+    ES --> KIB
+    PROM --> GRAF
+    KIB --> GRAF
+    JAEGER --> GRAF
+    APM --> GRAF
+    PD --> GRAF
+
+    GRAF -.->|Monitoring| L1
+    GRAF -.->|Security Alerts| L2
+    GRAF -.->|Performance| L3
+    GRAF -.->|Health Check| L4
+
+    classDef layer fill:#1e293b,stroke:#475569,stroke-width:2px,color:#e2e8f0
+    classDef highlight fill:#6366f1,stroke:#4f46e5,stroke-width:3px,color:#fff
+    classDef critical fill:#dc2626,stroke:#991b1b,stroke-width:2px,color:#fff
+    class L1,L2,L3,L4,L5 layer
+    class GW,ESB,FINACLE,GRAF highlight
+    class WAF,COMPLIANCE critical
+</div>
+
+    <!-- Key Performance Metrics -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-value">&lt;50ms</div>
+        <div class="metric-label">API Gateway Latency</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">2000+ TPS</div>
+        <div class="metric-label">Transaction Processing</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">99.95%</div>
+        <div class="metric-label">Uptime SLA</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">&lt;3s</div>
+        <div class="metric-label">ATM Response Time</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">95%+</div>
+        <div class="metric-label">Cache Hit Ratio</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">10K+</div>
+        <div class="metric-label">Concurrent Users</div>
+      </div>
+    </div>
+
+    <!-- Enhanced Features Grid -->
+    <div class="summary-grid">
+      <div class="feature-card">
+        <h3>🚀 Performance Features</h3>
+        <ul class="feature-list">
+          <li>⚡ Sub-50ms API response times</li>
+          <li>🔄 2000+ transactions per second</li>
+          <li>💨 &lt;3s ATM transaction processing</li>
+          <li>📊 95%+ Redis cache hit ratio</li>
+          <li>🌐 CDN for global content delivery</li>
+          <li>⚙️ Auto-scaling with Kubernetes</li>
+        </ul>
+      </div>
+      
+      <div class="feature-card">
+        <h3>🛡️ Security Features</h3>
+        <ul class="feature-list">
+          <li>🔐 End-to-end TLS 1.3 encryption</li>
+          <li>🛡️ HSM FIPS 140-2 Level 3</li>
+          <li>👥 RBAC with 200+ permissions</li>
+          <li>🔥 WAF with OWASP Top 10 protection</li>
+          <li>📋 RBI, ISO 27001, PCI-DSS compliance</li>
+          <li>🔍 Real-time security monitoring</li>
+        </ul>
+      </div>
+      
+      <div class="feature-card">
+        <h3>🔧 Advanced Capabilities</h3>
+        <ul class="feature-list">
+          <li>🤖 AI-powered fraud detection</li>
+          <li>📈 Predictive auto-scaling</li>
+          <li>🔄 Zero-downtime deployments</li>
+          <li>🔗 Distributed transaction management</li>
+          <li>📱 Progressive Web App (PWA)</li>
+          <li>🌍 Multi-region deployment ready</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Architecture Summary Table -->
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Performance</th>
+          <th>Security</th>
+          <th>Scalability</th>
+          <th>Observability</th>
+          <th>Key Technologies</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>L1: External</strong></td>
+          <td>10K+ concurrent users</td>
+          <td>TLS 1.3 + 2FA</td>
+          <td>CDN + PWA</td>
+          <td>UX Monitoring</td>
+          <td>React Native, PWA, ISO 8583</td>
+        </tr>
+        <tr>
+          <td><strong>L2: Security</strong></td>
+          <td>&lt;50ms latency</td>
+          <td>HSM + MFA + WAF</td>
+          <td>2000 req/sec</td>
+          <td>Security Logs</td>
+          <td>WSO2, Kong, OAuth 2.0</td>
+        </tr>
+        <tr>
+          <td><strong>L3: Integration</strong></td>
+          <td>2000+ TPS</td>
+          <td>mTLS + RBAC</td>
+          <td>Auto-scaling</td>
+          <td>Kafka Metrics</td>
+          <td>Kafka, RabbitMQ, K8s</td>
+        </tr>
+        <tr>
+          <td><strong>L4: Core</strong></td>
+          <td>Real-time processing</td>
+          <td>AES-256 at rest</td>
+          <td>HA Clusters</td>
+          <td>DB Performance</td>
+          <td>Finacle, PostgreSQL, Redis</td>
+        </tr>
+        <tr>
+          <td><strong>L5: Monitoring</strong></td>
+          <td>15s metric intervals</td>
+          <td>Audit Trails</td>
+          <td>Predictive scaling</td>
+          <td>AI-powered alerts</td>
+          <td>Prometheus, Grafana, ELK</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Technology Stack -->
+    <div class="tech-stack">
+      <span class="tech-badge">Docker 24.x</span>
+      <span class="tech-badge">Kubernetes 1.30</span>
+      <span class="tech-badge">Java 17</span>
+      <span class="tech-badge">Spring Boot 3.x</span>
+      <span class="tech-badge">PostgreSQL 16</span>
+      <span class="tech-badge">Redis 7.x</span>
+      <span class="tech-badge">Apache Kafka 3.x</span>
+      <span class="tech-badge">WSO2 EI 7.x</span>
+      <span class="tech-badge">Prometheus</span>
+      <span class="tech-badge">Grafana</span>
+      <span class="tech-badge">ELK Stack</span>
+      <span class="tech-badge">ISO 27001</span>
+    </div>
+
+    <div class="footer">
+      <div class="company-name">GG Net Solutions</div>
+      <p>Enterprise Integration Platform | Alappuzha, Kerala | 6 Weeks Implementation Timeline</p>
+      <p style="margin-top: 15px; color: #94a3b8; font-size: 0.9rem;">
+        Infrastructure: Docker 24.x + Kubernetes 1.30 | CI/CD: Jenkins/GitLab | Security: ISO 27001 Certified | Support: 24/7 Enterprise
+      </p>
+    </div>
+  </div>
+</body>
+</html>

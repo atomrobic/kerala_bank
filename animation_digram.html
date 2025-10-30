@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kerala Bank - Middleware Architecture</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #4CAF50, #2196F3, #9C27B0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #b0b0b0;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: rgba(33, 150, 243, 0.3);
+            border-color: #2196F3;
+            box-shadow: 0 0 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            gap: 25px;
+        }
+
+        .stats-box, .legend-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            flex: 1;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stats-box h3, .legend-box h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+
+        .stats-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 18px;
+        }
+
+        .legend-color {
+            width: 25px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        .legend-sync { background: #4CAF50; }
+        .legend-async { background: #FF9800; }
+        .legend-monitor { background: #9C27B0; }
+
+        /* Architecture Diagram */
+        .architecture-diagram {
+            margin: 40px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 35px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .architecture-diagram h2 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.2rem;
+            background: linear-gradient(90deg, #FF9800, #9C27B0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .diagram-container {
+            position: relative;
+            height: 850px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            padding: 25px;
+        }
+
+        .diagram-layer {
+            position: absolute;
+            width: 92%;
+            left: 4%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .diagram-layer:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.15);
+        }
+
+        /* Increased spacing between layers */
+        .diagram-layer-1 { top: 3%; background: rgba(33, 150, 243, 0.25); border: 1px solid #2196F3; }
+        .diagram-layer-2 { top: 22%; background: rgba(244, 67, 54, 0.25); border: 1px solid #F44336; }
+        .diagram-layer-3 { top: 41%; background: rgba(76, 175, 80, 0.25); border: 1px solid #4CAF50; }
+        .diagram-layer-4 { top: 60%; background: rgba(156, 39, 176, 0.25); border: 1px solid #9C27B0; }
+        .diagram-layer-5 { top: 79%; background: rgba(255, 152, 0, 0.25); border: 1px solid #FF9800; }
+
+        .diagram-node {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 15px 18px;
+            text-align: center;
+            min-width: 140px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+            margin: 0 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .diagram-node:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: translateY(-7px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .diagram-node::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .diagram-node:hover::after {
+            transform: translateX(100%);
+        }
+
+        .diagram-node h4 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            white-space: nowrap;
+        }
+
+        .diagram-node p {
+            font-size: 0.8rem;
+            color: #b0b0b0;
+        }
+
+        .service-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 1.4rem;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .icon-mobile { background: linear-gradient(135deg, #4CAF50, #2196F3); }
+        .icon-web { background: linear-gradient(135deg, #2196F3, #9C27B0); }
+        .icon-atm { background: linear-gradient(135deg, #FF9800, #F44336); }
+        .icon-payment { background: linear-gradient(135deg, #9C27B0, #4CAF50); }
+        .icon-govt { background: linear-gradient(135deg, #F44336, #FF9800); }
+        .icon-fintech { background: linear-gradient(135deg, #4CAF50, #9C27B0); }
+
+        .diagram-connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .connection {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, #4CAF50, #2196F3);
+            transform-origin: left center;
+            box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
+            transition: all 0.3s ease;
+        }
+
+        .connection-head {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 8px solid #4CAF50;
+            right: -8px;
+            top: -4px;
+        }
+
+        .connection-dashed {
+            background: repeating-linear-gradient(90deg, #FF9800, #FF9800 4px, transparent 4px, transparent 8px);
+            box-shadow: 0 0 12px rgba(255, 152, 0, 0.6);
+        }
+
+        .connection-dashed .connection-head {
+            border-left-color: #FF9800;
+        }
+
+        .connection-monitor {
+            background: repeating-linear-gradient(90deg, #9C27B0, #9C27B0 3px, transparent 3px, transparent 6px);
+            box-shadow: 0 0 12px rgba(156, 39, 176, 0.6);
+        }
+
+        .connection-monitor .connection-head {
+            border-left-color: #9C27B0;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .company-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            margin-bottom: 18px;
+        }
+
+        .company-logo {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        /* Component Details Panel */
+        .details-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 650px;
+            background: rgba(30, 30, 50, 0.97);
+            border-radius: 18px;
+            padding: 35px;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .details-panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -40%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        .details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .details-title {
+            font-size: 1.7rem;
+            color: #4CAF50;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.7rem;
+            cursor: pointer;
+            padding: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .details-content {
+            line-height: 1.7;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* Hover effect improvements */
+        .diagram-node.highlighted {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+        }
+
+        .connection.highlighted {
+            height: 5px;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.9);
+        }
+
+        .connection-dashed.highlighted {
+            box-shadow: 0 0 20px rgba(255, 152, 0, 0.9);
+        }
+
+        .connection-monitor.highlighted {
+            box-shadow: 0 0 20px rgba(156, 39, 176, 0.9);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .diagram-container {
+                height: 800px;
+            }
+            
+            .diagram-node {
+                min-width: 120px;
+                padding: 12px 15px;
+            }
+            
+            .diagram-node h4 {
+                font-size: 0.9rem;
+            }
+            
+            .diagram-node p {
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .stats-container {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .diagram-container {
+                height: 750px;
+            }
+            
+            .diagram-node {
+                min-width: 100px;
+                padding: 10px 12px;
+            }
+            
+            .diagram-node h4 {
+                font-size: 0.85rem;
+            }
+            
+            .diagram-node p {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .diagram-layer {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 12px;
+            }
+            
+            .diagram-node {
+                min-width: 90px;
+                padding: 8px;
+                margin: 0 4px;
+            }
+            
+            .diagram-node h4 {
+                font-size: 0.75rem;
+            }
+            
+            .service-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .controls {
+                gap: 12px;
+            }
+            
+            .control-btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .header h1 {
+                font-size: 1.6rem;
+            }
+            
+            .header p {
+                font-size: 0.9rem;
+            }
+            
+            .company-info {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .details-panel {
+                width: 95%;
+                padding: 25px;
+            }
+            
+            .diagram-container {
+                height: 700px;
+            }
+            
+            .diagram-layer {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>കേരള സ്റ്റേറ്റ് കോ-ഓപ്പറേറ്റീവ് ബാങ്ക് - Middleware Architecture</h1>
+            <p>Enterprise Integration Platform | എന്റർപ്രൈസ് സംയോജന പ്ലാറ്റ്‌ഫോം</p>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn active" id="animateBtn">Animate Connections</button>
+            <button class="control-btn" id="resetBtn">Reset View</button>
+        </div>
+
+        <div class="stats-container">
+            <div class="stats-box">
+                <h3>Project Timeline | കാലാവധി</h3>
+                <div class="stats-item">
+                    <span>⏱️</span>
+                    <span>Duration: 6 Weeks (42 Days)</span>
+                </div>
+                <div class="stats-item">
+                    <span>✅</span>
+                    <span>Go-Live: Week 6</span>
+                </div>
+                <div class="stats-item">
+                    <span>🔧</span>
+                    <span>Hypercare: 90 Days Post Go-Live</span>
+                </div>
+            </div>
+            
+            <div class="legend-box">
+                <h3>Legend | ലെജൻഡ്</h3>
+                <div class="legend-item">
+                    <div class="legend-color legend-sync"></div>
+                    <span>Synchronous Flow</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-async"></div>
+                    <span>Asynchronous Flow</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-monitor"></div>
+                    <span>Monitoring Flow</span>
+                </div>
+                <div class="legend-item">
+                    <span>🔒</span>
+                    <span>Encrypted Connection</span>
+                </div>
+                <div class="legend-item">
+                    <span>🔄</span>
+                    <span>High Availability</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="architecture-diagram">
+            <h2>Middleware Architecture Diagram | മിഡിൽവെയർ ആർക്കിടെക്ചർ ഡയഗ്രം</h2>
+            <div class="diagram-container">
+                <!-- Layers -->
+                <div class="diagram-layer diagram-layer-1">
+                    <div class="diagram-node" data-component="mobile-banking">
+                        <div class="service-icon icon-mobile">📱</div>
+                        <h4>Mobile Banking</h4>
+                        <p>iOS | Android</p>
+                    </div>
+                    <div class="diagram-node" data-component="internet-banking">
+                        <div class="service-icon icon-web">💻</div>
+                        <h4>Internet Banking</h4>
+                        <p>Web Portal</p>
+                    </div>
+                    <div class="diagram-node" data-component="atm-pos">
+                        <div class="service-icon icon-atm">🏧</div>
+                        <h4>ATM/POS</h4>
+                        <p>ISO 8583</p>
+                    </div>
+                    <div class="diagram-node" data-component="payment-systems">
+                        <div class="service-icon icon-payment">💸</div>
+                        <h4>Payment Systems</h4>
+                        <p>UPI | IMPS</p>
+                    </div>
+                    <div class="diagram-node" data-component="govt-portals">
+                        <div class="service-icon icon-govt">🏛️</div>
+                        <h4>Govt Portals</h4>
+                        <p>Aadhaar | eKYC</p>
+                    </div>
+                    <div class="diagram-node" data-component="fintech-apis">
+                        <div class="service-icon icon-fintech">🔗</div>
+                        <h4>FinTech APIs</h4>
+                        <p>Third-party</p>
+                    </div>
+                </div>
+                
+                <div class="diagram-layer diagram-layer-2">
+                    <div class="diagram-node" data-component="api-gateway">
+                        <div class="service-icon">🔐</div>
+                        <h4>API Gateway</h4>
+                        <p>WSO2 | Kong</p>
+                    </div>
+                    <div class="diagram-node" data-component="authentication">
+                        <div class="service-icon">🔑</div>
+                        <h4>Authentication</h4>
+                        <p>OAuth 2.0 | JWT</p>
+                    </div>
+                    <div class="diagram-node" data-component="encryption">
+                        <div class="service-icon">🛡️</div>
+                        <h4>Encryption</h4>
+                        <p>TLS 1.3 | AES-256</p>
+                    </div>
+                    <div class="diagram-node" data-component="rbac">
+                        <div class="service-icon">👥</div>
+                        <h4>RBAC Control</h4>
+                        <p>Role-based</p>
+                    </div>
+                    <div class="diagram-node" data-component="waf">
+                        <div class="service-icon">🔥</div>
+                        <h4>WAF Protection</h4>
+                        <p>DDoS | SQL Injection</p>
+                    </div>
+                    <div class="diagram-node" data-component="compliance">
+                        <div class="service-icon">📋</div>
+                        <h4>Compliance</h4>
+                        <p>RBI | ISO 27001</p>
+                    </div>
+                </div>
+                
+                <div class="diagram-layer diagram-layer-3">
+                    <div class="diagram-node" data-component="esb">
+                        <div class="service-icon">🔄</div>
+                        <h4>ESB</h4>
+                        <p>WSO2 EI | Camel</p>
+                    </div>
+                    <div class="diagram-node" data-component="microservices">
+                        <div class="service-icon">⚙️</div>
+                        <h4>Microservices</h4>
+                        <p>Java | Node.js</p>
+                    </div>
+                    <div class="diagram-node" data-component="kafka">
+                        <div class="service-icon">📨</div>
+                        <h4>Apache Kafka</h4>
+                        <p>Event Streaming</p>
+                    </div>
+                    <div class="diagram-node" data-component="rabbitmq">
+                        <div class="service-icon">🐰</div>
+                        <h4>RabbitMQ</h4>
+                        <p>Message Queue</p>
+                    </div>
+                    <div class="diagram-node" data-component="protocol-support">
+                        <div class="service-icon">🔄</div>
+                        <h4>Protocol Support</h4>
+                        <p>REST | SOAP | ISO</p>
+                    </div>
+                    <div class="diagram-node" data-component="saga-pattern">
+                        <div class="service-icon">🔀</div>
+                        <h4>Saga Pattern</h4>
+                        <p>Long Transactions</p>
+                    </div>
+                </div>
+                
+                <div class="diagram-layer diagram-layer-4">
+                    <div class="diagram-node" data-component="finacle-cbs">
+                        <div class="service-icon">🏦</div>
+                        <h4>Finacle CBS</h4>
+                        <p>Core Banking</p>
+                    </div>
+                    <div class="diagram-node" data-component="npci-systems">
+                        <div class="service-icon">🏛️</div>
+                        <h4>NPCI Systems</h4>
+                        <p>NEFT | RTGS</p>
+                    </div>
+                    <div class="diagram-node" data-component="postgresql">
+                        <div class="service-icon">💾</div>
+                        <h4>PostgreSQL</h4>
+                        <p>Database</p>
+                    </div>
+                    <div class="diagram-node" data-component="redis">
+                        <div class="service-icon">⚡</div>
+                        <h4>Redis Cache</h4>
+                        <p>In-Memory</p>
+                    </div>
+                    <div class="diagram-node" data-component="elasticsearch">
+                        <div class="service-icon">📊</div>
+                        <h4>Elasticsearch</h4>
+                        <p>Search & Logs</p>
+                    </div>
+                    <div class="diagram-node" data-component="dr-bcp">
+                        <div class="service-icon">🔄</div>
+                        <h4>DR/BCP</h4>
+                        <p>Disaster Recovery</p>
+                    </div>
+                </div>
+                
+                <div class="diagram-layer diagram-layer-5">
+                    <div class="diagram-node" data-component="prometheus">
+                        <div class="service-icon">📈</div>
+                        <h4>Prometheus</h4>
+                        <p>Metrics</p>
+                    </div>
+                    <div class="diagram-node" data-component="grafana">
+                        <div class="service-icon">📊</div>
+                        <h4>Grafana</h4>
+                        <p>Dashboards</p>
+                    </div>
+                    <div class="diagram-node" data-component="kibana">
+                        <div class="service-icon">🔍</div>
+                        <h4>Kibana</h4>
+                        <p>Log Analysis</p>
+                    </div>
+                    <div class="diagram-node" data-component="jaeger">
+                        <div class="service-icon">🔗</div>
+                        <h4>Jaeger</h4>
+                        <p>Tracing</p>
+                    </div>
+                    <div class="diagram-node" data-component="apm">
+                        <div class="service-icon">⚡</div>
+                        <h4>APM Tool</h4>
+                        <p>Performance</p>
+                    </div>
+                    <div class="diagram-node" data-component="pagerduty">
+                        <div class="service-icon">🚨</div>
+                        <h4>PagerDuty</h4>
+                        <p>Incident Mgmt</p>
+                    </div>
+                </div>
+                
+                <!-- Connections will be added by JavaScript -->
+                <div class="diagram-connections" id="diagramConnections"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="company-info">
+                <div class="company-logo">GG Net Solutions</div>
+                <div>Enterprise Integration | Alappuzha, Kerala</div>
+            </div>
+            <p>🐳 Infrastructure: Docker 24.x + Kubernetes 1.30 | CI/CD: Jenkins/GitLab | ഇൻഫ്രാസ്ട്രക്ചർ: കണ്ടെയ്നറൈസേഷൻ + ഓർക്കെസ്ട്രേഷൻ</p>
+        </div>
+    </div>
+
+    <!-- Component Details Panel -->
+    <div class="overlay" id="overlay"></div>
+    <div class="details-panel" id="detailsPanel">
+        <div class="details-header">
+            <h2 class="details-title" id="panelTitle">Component Details</h2>
+            <button class="close-btn" id="closePanel">×</button>
+        </div>
+        <div class="details-content" id="panelContent">
+            <p>Select a component to view details</p>
+        </div>
+    </div>
+
+    <script>
+        // Component details data
+        const componentDetails = {
+            'mobile-banking': {
+                title: 'Mobile Banking',
+                description: 'മൊബൈൽ ബാങ്കിംഗ് ആപ്പ് - iOS | Android | PWA',
+                details: 'Provides banking services through mobile applications with support for iOS, Android and Progressive Web Apps. Includes features like fund transfers, bill payments, account management, and biometric authentication.',
+                technologies: ['REST APIs', 'Push Notifications', 'Biometric Auth', 'React Native']
+            },
+            'internet-banking': {
+                title: 'Internet Banking',
+                description: 'ഇന്റർനെറ്റ് ബാങ്കിംഗ് പോർട്ടൽ - Web Portal | Responsive',
+                details: 'Web-based banking platform with responsive design for all devices. Supports online transactions, statement downloads, fixed deposit creation, and personalized dashboards.',
+                technologies: ['HTTPS', 'OAuth 2.0', 'React/Angular', 'Responsive Design']
+            },
+            'api-gateway': {
+                title: 'API Gateway Cluster',
+                description: 'WSO2 API Manager 4.x / Kong - Load Balanced | HA Configuration',
+                details: 'Central entry point for all API requests with load balancing, rate limiting, and security enforcement. Provides API lifecycle management and developer portal.',
+                technologies: ['WSO2 API Manager', 'Kong', 'Rate Limiting', 'Load Balancing']
+            },
+            'authentication': {
+                title: 'Authentication Service',
+                description: 'OAuth 2.0 | OpenID Connect - JWT Token | MFA Support',
+                details: 'Handles user authentication and authorization using industry-standard protocols. Supports multi-factor authentication and integration with Active Directory.',
+                technologies: ['OAuth 2.0', 'OpenID Connect', 'JWT', 'MFA', 'AD/LDAP']
+            },
+            'esb': {
+                title: 'Enterprise Service Bus',
+                description: 'WSO2 EI 7.x | Apache Camel - Data Orchestration & Routing',
+                details: 'Central integration backbone that handles message routing, transformation, and protocol mediation between different systems and services.',
+                technologies: ['WSO2 EI', 'Apache Camel', 'Service Orchestration', 'Message Transformation']
+            },
+            'microservices': {
+                title: 'Microservices Cluster',
+                description: '☕ Java 17 + Spring Boot 3.x | 🟢 Node.js 20 (TypeScript)',
+                details: 'Distributed architecture with independently deployable services. Each service handles specific business capabilities with clear boundaries and APIs.',
+                technologies: ['Java 17', 'Spring Boot 3.x', 'Node.js 20', 'TypeScript', 'Docker']
+            },
+            'finacle-cbs': {
+                title: 'Finacle Core Banking System',
+                description: 'Core Banking System - കോർ ബാങ്കിംഗ് സിസ്റ്റം',
+                details: 'Primary banking system handling accounts, transactions, loans, and customer management. Provides real-time banking operations and reporting.',
+                technologies: ['SOAP/REST APIs', 'Real-time Processing', 'ACID Compliance', 'High Availability']
+            },
+            'prometheus': {
+                title: 'Prometheus Monitoring',
+                description: 'Metrics Collection - മെട്രിക്സ് ശേഖരണം',
+                details: 'Time-series database for collecting and storing system metrics. Provides alerting and querying capabilities for monitoring system health.',
+                technologies: ['Time-series DB', 'Metrics Collection', 'Alerting', 'Query Language']
+            }
+        };
+
+        // Create diagram connections
+        function createDiagramConnections() {
+            const container = document.getElementById('diagramConnections');
+            
+            // Connection configurations
+            const connections = [
+                // From Layer 1 to Layer 2
+                { fromLayer: 1, fromIndex: 0, toLayer: 2, toIndex: 0, type: 'sync', delay: 0 },
+                { fromLayer: 1, fromIndex: 1, toLayer: 2, toIndex: 0, type: 'sync', delay: 200 },
+                { fromLayer: 1, fromIndex: 2, toLayer: 2, toIndex: 0, type: 'sync', delay: 400 },
+                { fromLayer: 1, fromIndex: 3, toLayer: 2, toIndex: 0, type: 'sync', delay: 600 },
+                { fromLayer: 1, fromIndex: 4, toLayer: 2, toIndex: 0, type: 'sync', delay: 800 },
+                { fromLayer: 1, fromIndex: 5, toLayer: 2, toIndex: 0, type: 'sync', delay: 1000 },
+                
+                // From Layer 2 to Layer 3
+                { fromLayer: 2, fromIndex: 0, toLayer: 3, toIndex: 0, type: 'sync', delay: 1200 },
+                { fromLayer: 2, fromIndex: 0, toLayer: 3, toIndex: 1, type: 'sync', delay: 1400 },
+                { fromLayer: 2, fromIndex: 0, toLayer: 3, toIndex: 2, type: 'async', delay: 1600 },
+                { fromLayer: 2, fromIndex: 0, toLayer: 3, toIndex: 3, type: 'async', delay: 1800 },
+                
+                // From Layer 3 to Layer 4
+                { fromLayer: 3, fromIndex: 0, toLayer: 4, toIndex: 0, type: 'sync', delay: 2000 },
+                { fromLayer: 3, fromIndex: 0, toLayer: 4, toIndex: 1, type: 'sync', delay: 2200 },
+                { fromLayer: 3, fromIndex: 0, toLayer: 4, toIndex: 2, type: 'sync', delay: 2400 },
+                { fromLayer: 3, fromIndex: 0, toLayer: 4, toIndex: 3, type: 'sync', delay: 2600 },
+                { fromLayer: 3, fromIndex: 0, toLayer: 4, toIndex: 4, type: 'sync', delay: 2800 },
+                
+                // Monitoring connections from all layers to Layer 5
+                { fromLayer: 1, fromIndex: 0, toLayer: 5, toIndex: 0, type: 'monitor', delay: 3000 },
+                { fromLayer: 2, fromIndex: 0, toLayer: 5, toIndex: 0, type: 'monitor', delay: 3200 },
+                { fromLayer: 3, fromIndex: 0, toLayer: 5, toIndex: 0, type: 'monitor', delay: 3400 },
+                { fromLayer: 4, fromIndex: 0, toLayer: 5, toIndex: 0, type: 'monitor', delay: 3600 }
+            ];
+            
+            // Create connections
+            connections.forEach(conn => {
+                const connectionEl = document.createElement('div');
+                connectionEl.className = `connection ${conn.type === 'async' ? 'connection-dashed' : ''} ${conn.type === 'monitor' ? 'connection-monitor' : ''}`;
+                connectionEl.setAttribute('data-from', `${conn.fromLayer}-${conn.fromIndex}`);
+                connectionEl.setAttribute('data-to', `${conn.toLayer}-${conn.toIndex}`);
+                
+                // Calculate positions
+                const fromLayer = document.querySelector(`.diagram-layer-${conn.fromLayer}`);
+                const toLayer = document.querySelector(`.diagram-layer-${conn.toLayer}`);
+                
+                if (fromLayer && toLayer) {
+                    const fromNodes = fromLayer.querySelectorAll('.diagram-node');
+                    const toNodes = toLayer.querySelectorAll('.diagram-node');
+                    
+                    if (fromNodes[conn.fromIndex] && toNodes[conn.toIndex]) {
+                        const fromRect = fromNodes[conn.fromIndex].getBoundingClientRect();
+                        const toRect = toNodes[conn.toIndex].getBoundingClientRect();
+                        const containerRect = container.getBoundingClientRect();
+                        
+                        const fromX = fromRect.left + fromRect.width/2 - containerRect.left;
+                        const fromY = fromRect.top + fromRect.height/2 - containerRect.top;
+                        const toX = toRect.left + toRect.width/2 - containerRect.left;
+                        const toY = toRect.top + toRect.height/2 - containerRect.top;
+                        
+                        // Calculate distance and angle
+                        const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+                        const angle = Math.atan2(toY - fromY, toX - fromX) * 180 / Math.PI;
+                        
+                        // Set connection styles
+                        Object.assign(connectionEl.style, {
+                            width: '0',
+                            left: `${fromX}px`,
+                            top: `${fromY}px`,
+                            transform: `rotate(${angle}deg)`,
+                            animationDelay: `${conn.delay}ms`
+                        });
+                        
+                        // Add arrow head
+                        const connectionHead = document.createElement('div');
+                        connectionHead.className = 'connection-head';
+                        connectionEl.appendChild(connectionHead);
+                        
+                        container.appendChild(connectionEl);
+                        
+                        // Animate the connection
+                        setTimeout(() => {
+                            connectionEl.style.width = `${distance}px`;
+                            connectionEl.style.transition = `width 1.5s ease-in-out ${conn.delay}ms`;
+                        }, 100);
+                    }
+                }
+            });
+        }
+
+        // Show component details
+        function showComponentDetails(componentId) {
+            const details = componentDetails[componentId];
+            const panel = document.getElementById('detailsPanel');
+            const overlay = document.getElementById('overlay');
+            const title = document.getElementById('panelTitle');
+            const content = document.getElementById('panelContent');
+            
+            if (details) {
+                title.textContent = details.title;
+                content.innerHTML = `
+                    <p><strong>Description:</strong> ${details.description}</p>
+                    <p><strong>Details:</strong> ${details.details}</p>
+                    <div style="margin-top: 15px;">
+                        <strong>Technologies:</strong>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                            ${details.technologies.map(tech => 
+                                `<span style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">${tech}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                title.textContent = 'Component Details';
+                content.innerHTML = `<p>Detailed information for this component is not available.</p>`;
+            }
+            
+            panel.classList.add('active');
+            overlay.classList.add('active');
+        }
+
+        // Highlight related connections and components
+        function highlightRelatedComponents(componentId) {
+            // Remove all existing highlights
+            document.querySelectorAll('.diagram-node').forEach(node => {
+                node.classList.remove('highlighted');
+            });
+            document.querySelectorAll('.connection').forEach(conn => {
+                conn.classList.remove('highlighted');
+            });
+            
+            // Find the component
+            const component = document.querySelector(`[data-component="${componentId}"]`);
+            if (!component) return;
+            
+            // Highlight the component
+            component.classList.add('highlighted');
+            
+            // Find related connections
+            const connections = document.querySelectorAll('.connection');
+            connections.forEach(conn => {
+                const from = conn.getAttribute('data-from');
+                const to = conn.getAttribute('data-to');
+                
+                // Check if this connection is related to the highlighted component
+                if (from && to) {
+                    const [fromLayer, fromIndex] = from.split('-');
+                    const [toLayer, toIndex] = to.split('-');
+                    
+                    // Find the component's position
+                    const componentLayer = component.closest('.diagram-layer');
+                    if (!componentLayer) return;
+                    
+                    const layerIndex = parseInt(componentLayer.className.match(/diagram-layer-(\d)/)[1]);
+                    const componentNodes = componentLayer.querySelectorAll('.diagram-node');
+                    const componentIndex = Array.from(componentNodes).indexOf(component);
+                    
+                    // Highlight connection if it's related to this component
+                    if ((parseInt(fromLayer) === layerIndex && parseInt(fromIndex) === componentIndex) ||
+                        (parseInt(toLayer) === layerIndex && parseInt(toIndex) === componentIndex)) {
+                        conn.classList.add('highlighted');
+                        
+                        // Also highlight the connected node
+                        const connectedLayer = document.querySelector(`.diagram-layer-${parseInt(fromLayer) === layerIndex ? toLayer : fromLayer}`);
+                        if (connectedLayer) {
+                            const connectedNodes = connectedLayer.querySelectorAll('.diagram-node');
+                            const connectedIndex = parseInt(parseInt(fromLayer) === layerIndex ? toIndex : fromIndex);
+                            if (connectedNodes[connectedIndex]) {
+                                connectedNodes[connectedIndex].classList.add('highlighted');
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            createDiagramConnections();
+            
+            // Add click effects to components
+            document.querySelectorAll('.diagram-node').forEach(component => {
+                component.addEventListener('click', function() {
+                    const componentId = this.getAttribute('data-component');
+                    showComponentDetails(componentId);
+                    
+                    // Visual feedback
+                    this.style.transform = 'scale(1.05)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 300);
+                });
+                
+                // Add hover effects
+                component.addEventListener('mouseenter', function() {
+                    const componentId = this.getAttribute('data-component');
+                    highlightRelatedComponents(componentId);
+                });
+                
+                component.addEventListener('mouseleave', function() {
+                    // Remove all highlights when mouse leaves
+                    document.querySelectorAll('.diagram-node').forEach(node => {
+                        node.classList.remove('highlighted');
+                    });
+                    document.querySelectorAll('.connection').forEach(conn => {
+                        conn.classList.remove('highlighted');
+                    });
+                });
+            });
+            
+            // Close panel functionality
+            document.getElementById('closePanel').addEventListener('click', function() {
+                document.getElementById('detailsPanel').classList.remove('active');
+                document.getElementById('overlay').classList.remove('active');
+            });
+            
+            document.getElementById('overlay').addEventListener('click', function() {
+                document.getElementById('detailsPanel').classList.remove('active');
+                this.classList.remove('active');
+            });
+            
+            // Animate connections button
+            document.getElementById('animateBtn').addEventListener('click', function() {
+                // Remove existing connections
+                document.querySelectorAll('.connection').forEach(el => {
+                    el.remove();
+                });
+                
+                // Recreate connections with animation
+                createDiagramConnections();
+            });
+            
+            // Reset view button
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                // Close details panel if open
+                document.getElementById('detailsPanel').classList.remove('active');
+                document.getElementById('overlay').classList.remove('active');
+                
+                // Remove all highlights
+                document.querySelectorAll('.diagram-node').forEach(node => {
+                    node.classList.remove('highlighted');
+                });
+                document.querySelectorAll('.connection').forEach(conn => {
+                    conn.classList.remove('highlighted');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
